@@ -22,6 +22,8 @@ from typing import Any, Protocol
 
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError
+from google import genai
+from google.genai import types
 
 load_dotenv(Path(__file__).resolve().with_name(".env"))
 
@@ -265,7 +267,42 @@ class OpenAIGenerator:
             raise RuntimeError("OpenAI returned an empty answer")
         return answer
 
+class GeminiGenerator:
+    def __init__(self, max_output_tokens: int = 1024) -> None:
+        api_key = os.getenv("GEMINI_API_KEY", "").strip()
+        self.model = os.getenv("GEMINI_MODEL", "").strip()
+        if not api_key:
+            raise RuntimeError("GEMINI_API_KEY is missing from .env")
+        if not self.model:
+            raise RuntimeError("GEMINI_MODEL is missing from .env")
+        self.client = genai.Client(api_key=api_key)
+        self.max_output_tokens = max_output_tokens
 
+    def generate(self, prompt: str) -> str:
+        last_error: Exception | None = None
+        for attempt in range(5):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        temperature=0,
+                        max_output_tokens=self.max_output_tokens,
+                    ),
+                )
+                answer = (response.text or "").strip()
+                if not answer:
+                    raise RuntimeError("Gemini returned an empty answer")
+                return answer
+            except Exception as exc:
+                last_error = exc
+                message = str(exc)
+                if "429" in message or "RESOURCE_EXHAUSTED" in message:
+                    time.sleep(20 * (attempt + 1))  # chờ 20s, 40s, 60s...
+                    continue
+                raise RuntimeError(f"Gemini request failed: {exc}") from exc
+        raise RuntimeError(f"Gemini request failed after retries: {last_error}")
+    
 @dataclass(frozen=True)
 class DomainResponse:
     question: str
@@ -299,7 +336,7 @@ class DomainAssistant:
         return cls(
             corpus_id,
             BM25Retriever(chunks),
-            generator if generator is not None else OpenAIGenerator(),
+            generator if generator is not None else GeminiGenerator(),
             top_k,
         )
 
