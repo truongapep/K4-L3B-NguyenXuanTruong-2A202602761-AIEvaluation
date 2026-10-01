@@ -30,11 +30,11 @@ critical.
 
 | Metric | Acceptable Low Score Scenario | Critical Low Score Scenario | Action Required |
 |---|---|---|---|
-| Faithfulness | | | |
-| Answer Relevance | | | |
-| Context Recall | | | |
-| Context Precision | | | |
-| Completeness | | | |
+| Faithfulness | Answer đúng ý nhưng diễn đạt khác nên ít trùng từ (như E01)|Answer thêm số ngày, số tiền, điều kiện không có trong tài liệu | Đối chiếu từng claim với context, siết prompt "chỉ dùng context" |
+| Answer Relevance | Answer ngắn gọn, không lặp từ khóa câu hỏi | Trả lời sang chủ đề khác | Xem lại prompt, đọc tay các case thấp |
+| Context Recall | Câu hỏi ngoài phạm vi nên không có evidence | Thiếu chunk chứa điều kiện hoặc ngoại lệ (như H03) | Tăng top_k, đổi chunking hoặc query |
+| Context Precision | Có chunk nhiễu nhưng chunk đúng vẫn ở đầu | Chunk đúng bị chôn dưới nhiều chunk nhiễu | Thêm reranking, giảm top_k |
+| Completeness | Answer gọn nhưng đủ ý chính | Bỏ điều kiện hoặc ngoại lệ làm kết luận sai | Prompt yêu cầu trả lời đủ mọi phần của câu hỏi |
 
 ### Exercise 1.2 — Bias trong LLM-as-a-Judge
 
@@ -46,15 +46,15 @@ Ba bias thường gặp:
 
 **Câu 1: Thiết kế experiment phát hiện position bias với ít nhất hai conditions.**
 
-> *Câu trả lời:*
+> *Câu trả lời:* Lấy cùng một cặp answer A và B. Chấm lần 1 với thứ tự A trước B, lần 2 đảo thành B trước A, lặp trên nhiều cặp. Nếu answer đứng trước thắng nhiều hơn hẳn ở cả hai điều kiện thì judge có position bias.
 
 **Câu 2: Làm thế nào giảm verbosity bias bằng rubric design?**
 
-> *Câu trả lời:*
+> *Câu trả lời:* Rubric ghi rõ chấm theo claim đúng chứ không theo độ dài, trừ điểm claim thừa hoặc không có trong tài liệu, và mức cao nhất yêu cầu ngắn gọn mà đủ ý.
 
 **Câu 3: Tại sao cần calibrate LLM judge với human labels?**
 
-> *Câu trả lời:*
+> *Câu trả lời:* Judge có thể nhất quán nhưng lệch so với người. So điểm judge với nhãn người trên một mẫu (ví dụ 20 case) để biết độ đồng thuận rồi chỉnh rubric. Nếu không, không biết điểm có đáng tin hay không.
 
 ### Exercise 1.3 — Evaluation trong CI/CD
 
@@ -62,13 +62,13 @@ Ba bias thường gặp:
 
 | Metric | Threshold | Lý do |
 |---|---:|---|
-| Faithfulness | | |
-| Answer Relevance | | |
-| Completeness | | |
+| Faithfulness | 0.7 | Bài giảng nêu faithfulness dưới 0.7 thì không deploy. Bịa chính sách gây hại nhất |
+| Answer Relevance | 0.6 | Dưới 0.6 là vùng "Significant issues" theo bài giảng |
+| Completeness | 0.6 | Thiếu điều kiện có thể làm khách hiểu sai |
 
 **Câu 2: Khi nào dùng offline evaluation, online evaluation và human review?**
 
-> *Câu trả lời:*
+> *Câu trả lời:* Offline chạy trên golden dataset trước mỗi release hoặc khi đổi prompt, retrieval. Online theo dõi sau deploy (phản hồi khách, tỉ lệ từ chối, mẫu answer ngẫu nhiên). Human review dùng cho case rủi ro cao (hoàn tiền, bảo mật, quyền riêng tư), adversarial, và để calibrate judge.
 
 ---
 
@@ -337,11 +337,11 @@ Hoàn thành `reflection.md` bằng kết quả thật từ Exercise 3.2.
 
 Hoàn thành kiểm tra cuối trong khoảng 11:50–12:00.
 
-- [ ] Tất cả required tests pass.
-- [ ] `golden_dataset.json` validate thành công.
-- [ ] Exercise 3.1 hoàn thành trong file JSON và bảng kết quả phía trên.
-- [ ] Exercise 3.2 có năm metrics, aggregate report và ba cases thấp nhất.
-- [ ] Exercise 3.3 có rubric 1–5 và bias controls.
-- [ ] `reflection.md` có ba failure analyses và regression strategy.
-- [ ] Đã copy `template.py` thành `solution/solution.py`.
+- [x] Tất cả required tests pass.
+- [x] `golden_dataset.json` validate thành công.
+- [x] Exercise 3.1 hoàn thành trong file JSON và bảng kết quả phía trên.
+- [x] Exercise 3.2 có năm metrics, aggregate report và ba cases thấp nhất.
+- [x] Exercise 3.3 có rubric 1–5 và bias controls.
+- [x] `reflection.md` có ba failure analyses và regression strategy.
+- [x] Đã copy `template.py` thành `solution/solution.py`.
 - [ ] Exercise 3.4 và 3.5 chỉ làm nếu chọn bonus.
